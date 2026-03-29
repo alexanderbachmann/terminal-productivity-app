@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { Terminal } from 'xterm'
-import { FitAddon } from 'xterm-addon-fit'
-import 'xterm/css/xterm.css'
+import { Terminal } from '@xterm/xterm'
+import { FitAddon } from '@xterm/addon-fit'
+import { WebglAddon } from '@xterm/addon-webgl'
+import '@xterm/xterm/css/xterm.css'
 import type { TerminalSession } from '../../shared/types'
 
 interface Props {
@@ -22,6 +23,7 @@ export default function TerminalPane({ session, onClose }: Props) {
       cursorBlink: true,
       fontSize: 13,
       fontFamily: '"SF Mono", "Fira Code", "Cascadia Code", Menlo, monospace',
+      scrollback: 2000,
       theme: {
         background: '#1a1a2e',
         foreground: '#e0e0e0',
@@ -33,16 +35,20 @@ export default function TerminalPane({ session, onClose }: Props) {
     const fitAddon = new FitAddon()
     term.loadAddon(fitAddon)
     term.open(containerRef.current)
+
+    try {
+      term.loadAddon(new WebglAddon())
+    } catch {
+      // WebGL not available, fall back to canvas renderer
+    }
+
     fitAddon.fit()
+    term.focus()
 
     termRef.current = term
     fitRef.current = fitAddon
 
-    const cols = term.cols
-    const rows = term.rows
-
-    window.electronAPI.createTerminal({ ...session, cols, rows })
-
+    // Wire up listeners BEFORE creating the PTY so no output is lost
     term.onData((data) => {
       window.electronAPI.writeTerminal(session.id, data)
     })
@@ -60,9 +66,19 @@ export default function TerminalPane({ session, onClose }: Props) {
       }
     })
 
+    // Now create the PTY process
+    const cols = term.cols
+    const rows = term.rows
+    window.electronAPI.createTerminal({ ...session, cols, rows })
+
+    let resizeRaf: number | null = null
     const handleResize = () => {
-      fitAddon.fit()
-      window.electronAPI.resizeTerminal(session.id, term.cols, term.rows)
+      if (resizeRaf) return
+      resizeRaf = requestAnimationFrame(() => {
+        resizeRaf = null
+        fitAddon.fit()
+        window.electronAPI.resizeTerminal(session.id, term.cols, term.rows)
+      })
     }
 
     const resizeObserver = new ResizeObserver(handleResize)
@@ -72,13 +88,17 @@ export default function TerminalPane({ session, onClose }: Props) {
       removeDataListener()
       removeExitListener()
       resizeObserver.disconnect()
+      if (resizeRaf) cancelAnimationFrame(resizeRaf)
       term.dispose()
     }
   }, [session.id])
 
   const handleRestart = () => {
     window.electronAPI.closeTerminal(session.id)
-    termRef.current?.clear()
+    if (termRef.current) {
+      termRef.current.clear()
+      termRef.current.write('\x1b[90mRestarting Claude Code...\x1b[0m\r\n')
+    }
     setIsRunning(true)
     const cols = termRef.current?.cols ?? 80
     const rows = termRef.current?.rows ?? 24
@@ -110,8 +130,9 @@ const styles: Record<string, React.CSSProperties> = {
   pane: {
     display: 'flex',
     flexDirection: 'column',
+    height: '100%',
+    minHeight: 0,
     backgroundColor: '#1a1a2e',
-    borderRadius: '4px',
     overflow: 'hidden'
   },
   titleBar: {
@@ -120,7 +141,8 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     padding: '4px 8px',
     backgroundColor: '#16213e',
-    fontSize: '12px'
+    fontSize: '12px',
+    flexShrink: 0
   },
   name: {
     fontWeight: 600,
@@ -144,6 +166,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   terminal: {
     flex: 1,
+    minHeight: 0,
     padding: '4px'
   }
 }

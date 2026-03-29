@@ -1,56 +1,49 @@
 import React, { useState, useCallback } from 'react'
 import TerminalGrid from './components/TerminalGrid'
-import type { TerminalSession, TerminalTemplate } from '../shared/types'
+import LayoutPicker, { GRID_PRESETS } from './components/LayoutPicker'
+import type { TerminalSession, GridLayout } from '../shared/types'
 
-let nextId = 1
-
-const DEFAULT_TEMPLATES: TerminalTemplate[] = [
-  {
-    id: 'claude-default',
-    name: 'Claude Code',
-    command: 'claude',
-    description: 'Start a Claude Code session'
-  },
-  {
-    id: 'shell',
-    name: 'Shell',
-    command: '',
-    description: 'Plain shell session'
-  }
-]
+type AppPhase = 'pick-project' | 'pick-layout' | 'running'
 
 export default function App() {
   const [projectPath, setProjectPath] = useState<string | null>(null)
+  const [phase, setPhase] = useState<AppPhase>('pick-project')
+  const [selectedLayout, setSelectedLayout] = useState<GridLayout | null>(null)
   const [terminals, setTerminals] = useState<TerminalSession[]>([])
-  const [templates] = useState<TerminalTemplate[]>(DEFAULT_TEMPLATES)
 
   const handlePickFolder = useCallback(async () => {
     const folder = await window.electronAPI.pickFolder()
     if (folder) {
       setProjectPath(folder)
-      setTerminals([])
       const saved = await window.electronAPI.loadWorkspace(folder)
       if (saved?.terminals?.length) {
-        setTerminals(saved.terminals)
-        nextId = Math.max(...saved.terminals.map((t) => parseInt(t.id) || 0)) + 1
+        const preset = GRID_PRESETS.find((p) => p.id === saved.gridLayoutId)
+        if (preset) {
+          setSelectedLayout(preset)
+          setTerminals(saved.terminals)
+          setPhase('running')
+          return
+        }
       }
+      setPhase('pick-layout')
     }
   }, [])
 
-  const handleAddTerminal = useCallback(
-    (template?: TerminalTemplate) => {
+  const launchWithLayout = useCallback(
+    (layout: GridLayout) => {
       if (!projectPath) return
-      const id = String(nextId++)
-      const session: TerminalSession = {
-        id,
-        name: template?.name ? `${template.name} ${id}` : `Terminal ${id}`,
+      setSelectedLayout(layout)
+      const totalSlots = layout.rows * layout.cols
+      const sessions: TerminalSession[] = Array.from({ length: totalSlots }, (_, i) => ({
+        id: String(Date.now()) + '-' + i,
+        name: `Agent ${i + 1}`,
         cwd: projectPath,
-        startupCommand: template?.command || undefined,
-        templateId: template?.id,
+        claudeConfig: {},
         cols: 80,
         rows: 24
-      }
-      setTerminals((prev) => [...prev, session])
+      }))
+      setTerminals(sessions)
+      setPhase('running')
     },
     [projectPath]
   )
@@ -61,9 +54,21 @@ export default function App() {
   }, [])
 
   const handleSaveWorkspace = useCallback(async () => {
-    if (!projectPath) return
-    await window.electronAPI.saveWorkspace(projectPath, terminals, templates)
-  }, [projectPath, terminals, templates])
+    if (!projectPath || !selectedLayout) return
+    await window.electronAPI.saveWorkspace({
+      projectPath,
+      terminals,
+      gridLayoutId: selectedLayout.id,
+      updatedAt: new Date().toISOString()
+    })
+  }, [projectPath, terminals, selectedLayout])
+
+  const handleReset = useCallback(() => {
+    terminals.forEach((t) => window.electronAPI.closeTerminal(t.id))
+    setTerminals([])
+    setPhase('pick-layout')
+    setSelectedLayout(null)
+  }, [terminals])
 
   return (
     <div style={styles.app}>
@@ -77,46 +82,57 @@ export default function App() {
           )}
         </div>
         <div style={styles.headerRight}>
-          <button style={styles.btn} onClick={handlePickFolder}>
-            {projectPath ? 'Change Project' : 'Open Project'}
-          </button>
-          {projectPath && (
+          {phase === 'running' && (
             <>
-              <div style={styles.templateGroup}>
-                {templates.map((t) => (
-                  <button
-                    key={t.id}
-                    style={styles.btnPrimary}
-                    onClick={() => handleAddTerminal(t)}
-                    title={t.description}
-                  >
-                    + {t.name}
-                  </button>
-                ))}
-              </div>
               <button style={styles.btn} onClick={handleSaveWorkspace}>
                 Save Layout
               </button>
+              <button style={styles.btn} onClick={handleReset}>
+                Reset
+              </button>
             </>
           )}
+          <button style={styles.btn} onClick={handlePickFolder}>
+            {projectPath ? 'Change Project' : 'Open Project'}
+          </button>
         </div>
       </header>
 
       <main style={styles.main}>
-        {!projectPath ? (
+        {phase === 'pick-project' && (
           <div style={styles.emptyState}>
-            <h2>Select a project folder to get started</h2>
+            <h2 style={styles.emptyTitle}>Select a project folder to get started</h2>
+            <p style={styles.emptyDesc}>
+              Each terminal will launch a Claude Code agent connected to your project
+            </p>
             <button style={styles.btnLarge} onClick={handlePickFolder}>
               Open Project Folder
             </button>
           </div>
-        ) : terminals.length === 0 ? (
+        )}
+
+        {phase === 'pick-layout' && (
           <div style={styles.emptyState}>
-            <h2>No terminals open</h2>
-            <p>Use the buttons above to add terminal sessions</p>
+            <h2 style={styles.emptyTitle}>Choose a terminal layout</h2>
+            <p style={styles.emptyDesc}>
+              Click a layout to launch Claude Code agents immediately
+            </p>
+            <div style={styles.layoutSection}>
+              <LayoutPicker
+                selectedId={null}
+                onSelect={launchWithLayout}
+              />
+            </div>
           </div>
-        ) : (
-          <TerminalGrid terminals={terminals} onClose={handleCloseTerminal} />
+        )}
+
+        {phase === 'running' && selectedLayout && terminals.length > 0 && (
+          <TerminalGrid
+            terminals={terminals}
+            rows={selectedLayout.rows}
+            cols={selectedLayout.cols}
+            onClose={handleCloseTerminal}
+          />
         )}
       </main>
     </div>
@@ -139,7 +155,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '8px 16px',
     backgroundColor: '#16213e',
     borderBottom: '1px solid #0f3460',
-    WebkitAppRegion: 'drag' as unknown as string
+    flexShrink: 0
   },
   headerLeft: {
     display: 'flex',
@@ -149,8 +165,7 @@ const styles: Record<string, React.CSSProperties> = {
   headerRight: {
     display: 'flex',
     alignItems: 'center',
-    gap: '8px',
-    WebkitAppRegion: 'no-drag' as unknown as string
+    gap: '8px'
   },
   title: {
     margin: 0,
@@ -164,10 +179,6 @@ const styles: Record<string, React.CSSProperties> = {
     backgroundColor: '#0f3460',
     color: '#a0c4ff'
   },
-  templateGroup: {
-    display: 'flex',
-    gap: '4px'
-  },
   btn: {
     padding: '6px 12px',
     border: '1px solid #0f3460',
@@ -177,28 +188,21 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
     fontSize: '13px'
   },
-  btnPrimary: {
-    padding: '6px 12px',
-    border: 'none',
-    borderRadius: '4px',
-    backgroundColor: '#0f3460',
-    color: '#e0e0e0',
-    cursor: 'pointer',
-    fontSize: '13px'
-  },
   btnLarge: {
     padding: '12px 24px',
     border: 'none',
     borderRadius: '6px',
     backgroundColor: '#0f3460',
-    color: '#e0e0e0',
+    color: '#a0c4ff',
     cursor: 'pointer',
     fontSize: '16px',
+    fontWeight: 600,
     marginTop: '16px'
   },
   main: {
     flex: 1,
-    overflow: 'hidden'
+    overflow: 'hidden',
+    minHeight: 0
   },
   emptyState: {
     display: 'flex',
@@ -206,6 +210,31 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'center',
     height: '100%',
-    opacity: 0.7
+    gap: '4px'
+  },
+  emptyTitle: {
+    margin: 0,
+    fontSize: '20px',
+    fontWeight: 600
+  },
+  emptyDesc: {
+    margin: '4px 0 16px',
+    fontSize: '14px',
+    color: '#7a7a9a'
+  },
+  layoutSection: {
+    marginTop: '12px'
+  },
+  layoutInfo: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    marginTop: '16px',
+    gap: '4px'
+  },
+  layoutLabel: {
+    fontSize: '14px',
+    color: '#a0c4ff',
+    fontWeight: 500
   }
 }

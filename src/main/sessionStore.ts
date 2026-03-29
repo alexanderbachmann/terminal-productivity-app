@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import os from 'os'
-import type { WorkspaceLayout, TerminalTemplate } from '../shared/types'
+import type { WorkspaceLayout } from '../shared/types'
 
 const STORE_DIR = path.join(os.homedir(), '.terminal-productivity-app')
 
@@ -33,22 +33,5 @@ export class SessionStore {
     } catch {
       return null
     }
-  }
-
-  saveTemplate(projectPath: string, template: TerminalTemplate): void {
-    const layout = this.load(projectPath) ?? {
-      projectPath,
-      terminals: [],
-      templates: [],
-      updatedAt: new Date().toISOString()
-    }
-    const idx = layout.templates.findIndex((t) => t.id === template.id)
-    if (idx >= 0) {
-      layout.templates[idx] = template
-    } else {
-      layout.templates.push(template)
-    }
-    layout.updatedAt = new Date().toISOString()
-    this.save(layout)
   }
 }

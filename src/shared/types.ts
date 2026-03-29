@@ -1,24 +1,34 @@
+export interface ClaudeConfig {
+  name?: string
+  model?: string
+  permissionMode?: 'default' | 'acceptEdits' | 'bypassPermissions' | 'plan' | 'auto'
+  appendSystemPrompt?: string
+  useWorktree?: boolean
+  worktreeName?: string
+  bare?: boolean
+  maxBudgetUsd?: number
+}
+
 export interface TerminalSession {
   id: string
   name: string
   cwd: string
-  startupCommand?: string
-  templateId?: string
+  claudeConfig: ClaudeConfig
   cols: number
   rows: number
 }
 
-export interface TerminalTemplate {
+export interface GridLayout {
   id: string
-  name: string
-  command: string
-  description?: string
+  label: string
+  rows: number
+  cols: number
 }
 
 export interface WorkspaceLayout {
   projectPath: string
   terminals: TerminalSession[]
-  templates: TerminalTemplate[]
+  gridLayoutId: string
   updatedAt: string
 }
 
@@ -37,5 +47,3 @@ export type IpcChannels =
   | 'workspace:save'
   | 'workspace:load'
   | 'workspace:pick-folder'
-  | 'template:list'
-  | 'template:save'

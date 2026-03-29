@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { TerminalSession, TerminalTemplate, TerminalOutput } from '../shared/types'
+import type { TerminalSession, TerminalOutput, WorkspaceLayout } from '../shared/types'
 
 const api = {
   pickFolder: (): Promise<string | null> =>
@@ -29,17 +29,11 @@ const api = {
     return () => ipcRenderer.removeListener('terminal:exit', listener)
   },
 
-  saveWorkspace: (projectPath: string, terminals: TerminalSession[], templates: TerminalTemplate[]) =>
-    ipcRenderer.invoke('workspace:save', projectPath, terminals, templates),
+  saveWorkspace: (layout: WorkspaceLayout) =>
+    ipcRenderer.invoke('workspace:save', layout),
 
   loadWorkspace: (projectPath: string) =>
-    ipcRenderer.invoke('workspace:load', projectPath),
-
-  listTemplates: (projectPath: string): Promise<TerminalTemplate[]> =>
-    ipcRenderer.invoke('template:list', projectPath),
-
-  saveTemplate: (projectPath: string, template: TerminalTemplate) =>
-    ipcRenderer.invoke('template:save', projectPath, template)
+    ipcRenderer.invoke('workspace:load', projectPath)
 }
 
 export type ElectronAPI = typeof api

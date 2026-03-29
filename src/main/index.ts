@@ -2,7 +2,7 @@ import { app, BrowserWindow, ipcMain, dialog } from 'electron'
 import path from 'path'
 import { TerminalManager } from './terminalManager'
 import { SessionStore } from './sessionStore'
-import type { TerminalSession, TerminalTemplate } from '../shared/types'
+import type { TerminalSession } from '../shared/types'
 
 let mainWindow: BrowserWindow | null = null
 const terminalManager = new TerminalManager()
@@ -42,23 +42,38 @@ function registerIpcHandlers(): void {
   })
 
   ipcMain.handle('terminal:create', (_event, session: TerminalSession) => {
-    const pty = terminalManager.create(session)
+    try {
+      const pty = terminalManager.create(session)
 
-    pty.onData((data: string) => {
+      pty.onData((data: string) => {
+        mainWindow?.webContents.send('terminal:data', {
+          sessionId: session.id,
+          data
+        })
+      })
+
+      pty.onExit(({ exitCode }: { exitCode: number }) => {
+        mainWindow?.webContents.send('terminal:exit', {
+          sessionId: session.id,
+          exitCode
+        })
+      })
+
+      return { success: true, sessionId: session.id }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err)
+      console.error('Failed to create terminal:', message)
+      // Send the error as terminal output so the user sees it in the pane
       mainWindow?.webContents.send('terminal:data', {
         sessionId: session.id,
-        data
+        data: `\r\n\x1b[31mFailed to start Claude Code: ${message}\x1b[0m\r\n`
       })
-    })
-
-    pty.onExit(({ exitCode }: { exitCode: number }) => {
       mainWindow?.webContents.send('terminal:exit', {
         sessionId: session.id,
-        exitCode
+        exitCode: 1
       })
-    })
-
-    return { success: true, sessionId: session.id }
+      return { success: false, sessionId: session.id, error: message }
+    }
   })
 
   ipcMain.on('terminal:write', (_event, sessionId: string, data: string) => {
@@ -73,23 +88,13 @@ function registerIpcHandlers(): void {
     terminalManager.close(sessionId)
   })
 
-  ipcMain.handle('workspace:save', (_event, projectPath: string, terminals: TerminalSession[], templates: TerminalTemplate[]) => {
-    sessionStore.save({ projectPath, terminals, templates, updatedAt: new Date().toISOString() })
+  ipcMain.handle('workspace:save', (_event, layout) => {
+    sessionStore.save(layout)
     return { success: true }
   })
 
   ipcMain.handle('workspace:load', (_event, projectPath: string) => {
     return sessionStore.load(projectPath)
-  })
-
-  ipcMain.handle('template:list', (_event, projectPath: string) => {
-    const workspace = sessionStore.load(projectPath)
-    return workspace?.templates ?? []
-  })
-
-  ipcMain.handle('template:save', (_event, projectPath: string, template: TerminalTemplate) => {
-    sessionStore.saveTemplate(projectPath, template)
-    return { success: true }
   })
 }
 
