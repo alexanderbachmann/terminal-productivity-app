@@ -3,6 +3,7 @@ import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { WebglAddon } from '@xterm/addon-webgl'
 import '@xterm/xterm/css/xterm.css'
+import { useTheme } from '../ThemeContext'
 import type { TerminalSession } from '../../shared/types'
 
 interface Props {
@@ -15,7 +16,9 @@ export default function TerminalPane({ session, onClose }: Props) {
   const termRef = useRef<Terminal | null>(null)
   const fitRef = useRef<FitAddon | null>(null)
   const [isRunning, setIsRunning] = useState(true)
+  const { theme, themeId } = useTheme()
 
+  // Initialize terminal
   useEffect(() => {
     if (!containerRef.current) return
 
@@ -24,12 +27,7 @@ export default function TerminalPane({ session, onClose }: Props) {
       fontSize: 13,
       fontFamily: '"SF Mono", "Fira Code", "Cascadia Code", Menlo, monospace',
       scrollback: 2000,
-      theme: {
-        background: '#1a1a2e',
-        foreground: '#e0e0e0',
-        cursor: '#a0c4ff',
-        selectionBackground: '#264f78'
-      }
+      theme: theme.xterm
     })
 
     const fitAddon = new FitAddon()
@@ -48,7 +46,7 @@ export default function TerminalPane({ session, onClose }: Props) {
     termRef.current = term
     fitRef.current = fitAddon
 
-    // Wire up listeners BEFORE creating the PTY so no output is lost
+    // Wire up listeners BEFORE creating the PTY
     term.onData((data) => {
       window.electronAPI.writeTerminal(session.id, data)
     })
@@ -93,6 +91,13 @@ export default function TerminalPane({ session, onClose }: Props) {
     }
   }, [session.id])
 
+  // Live theme switching
+  useEffect(() => {
+    if (termRef.current) {
+      termRef.current.options.theme = theme.xterm
+    }
+  }, [themeId])
+
   const handleRestart = () => {
     window.electronAPI.closeTerminal(session.id)
     if (termRef.current) {
@@ -106,67 +111,25 @@ export default function TerminalPane({ session, onClose }: Props) {
   }
 
   return (
-    <div style={styles.pane}>
-      <div style={styles.titleBar}>
-        <span style={styles.name}>{session.name}</span>
-        <div style={styles.controls}>
-          <span style={{ ...styles.status, color: isRunning ? '#4ade80' : '#f87171' }}>
-            {isRunning ? 'running' : 'stopped'}
+    <div className="pane">
+      <div className="pane-title-bar">
+        <span className="pane-name">{session.name}</span>
+        <div className="pane-controls">
+          <span className="pane-status">
+            <span className={`pane-status-dot ${isRunning ? 'pane-status-dot--running' : 'pane-status-dot--stopped'}`} />
+            <span className={isRunning ? 'pane-status-text--running' : 'pane-status-text--stopped'}>
+              {isRunning ? 'running' : 'stopped'}
+            </span>
           </span>
-          <button style={styles.ctrlBtn} onClick={handleRestart} title="Restart">
+          <button className="ctrl-btn" onClick={handleRestart} title="Restart">
             ↻
           </button>
-          <button style={{ ...styles.ctrlBtn, color: '#f87171' }} onClick={onClose} title="Close">
+          <button className="ctrl-btn ctrl-btn--close" onClick={onClose} title="Close">
             ✕
           </button>
         </div>
       </div>
-      <div ref={containerRef} style={styles.terminal} />
+      <div ref={containerRef} className="pane-terminal" />
     </div>
   )
-}
-
-const styles: Record<string, React.CSSProperties> = {
-  pane: {
-    display: 'flex',
-    flexDirection: 'column',
-    height: '100%',
-    minHeight: 0,
-    backgroundColor: '#1a1a2e',
-    overflow: 'hidden'
-  },
-  titleBar: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '4px 8px',
-    backgroundColor: '#16213e',
-    fontSize: '12px',
-    flexShrink: 0
-  },
-  name: {
-    fontWeight: 600,
-    color: '#a0c4ff'
-  },
-  controls: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px'
-  },
-  status: {
-    fontSize: '11px'
-  },
-  ctrlBtn: {
-    background: 'none',
-    border: 'none',
-    color: '#e0e0e0',
-    cursor: 'pointer',
-    fontSize: '14px',
-    padding: '0 4px'
-  },
-  terminal: {
-    flex: 1,
-    minHeight: 0,
-    padding: '4px'
-  }
 }

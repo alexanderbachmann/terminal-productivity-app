@@ -1,11 +1,14 @@
 import React, { useState, useCallback } from 'react'
 import TerminalGrid from './components/TerminalGrid'
 import LayoutPicker, { GRID_PRESETS } from './components/LayoutPicker'
+import { useTheme } from './ThemeContext'
+import { THEMES } from './themes'
 import type { TerminalSession, GridLayout } from '../shared/types'
 
 type AppPhase = 'pick-project' | 'pick-layout' | 'running'
 
 export default function App() {
+  const { themeId, setThemeId } = useTheme()
   const [projectPath, setProjectPath] = useState<string | null>(null)
   const [phase, setPhase] = useState<AppPhase>('pick-project')
   const [selectedLayout, setSelectedLayout] = useState<GridLayout | null>(null)
@@ -71,53 +74,62 @@ export default function App() {
   }, [terminals])
 
   return (
-    <div style={styles.app}>
-      <header style={styles.header}>
-        <div style={styles.headerLeft}>
-          <h1 style={styles.title}>Terminal Productivity</h1>
+    <div className="app">
+      <header className="header">
+        <div className="header-left">
+          <h1 className="title">Terminal Productivity</h1>
           {projectPath && (
-            <span style={styles.projectBadge} title={projectPath}>
+            <span className="project-badge" title={projectPath}>
               {projectPath.split('/').pop()}
             </span>
           )}
         </div>
-        <div style={styles.headerRight}>
+        <div className="header-right">
+          <select
+            className="theme-select"
+            value={themeId}
+            onChange={(e) => setThemeId(e.target.value)}
+          >
+            {THEMES.map((t) => (
+              <option key={t.id} value={t.id}>{t.name}</option>
+            ))}
+          </select>
           {phase === 'running' && (
             <>
-              <button style={styles.btn} onClick={handleSaveWorkspace}>
+              <button className="btn" onClick={handleSaveWorkspace}>
                 Save Layout
               </button>
-              <button style={styles.btn} onClick={handleReset}>
+              <button className="btn" onClick={handleReset}>
                 Reset
               </button>
             </>
           )}
-          <button style={styles.btn} onClick={handlePickFolder}>
+          <button className="btn" onClick={handlePickFolder}>
             {projectPath ? 'Change Project' : 'Open Project'}
           </button>
         </div>
       </header>
 
-      <main style={styles.main}>
+      <main className="main">
         {phase === 'pick-project' && (
-          <div style={styles.emptyState}>
-            <h2 style={styles.emptyTitle}>Select a project folder to get started</h2>
-            <p style={styles.emptyDesc}>
+          <div className="empty-state">
+            <h2 className="empty-title">Select a project folder to get started</h2>
+            <p className="empty-desc">
               Each terminal will launch a Claude Code agent connected to your project
             </p>
-            <button style={styles.btnLarge} onClick={handlePickFolder}>
+            <button className="btn-large" onClick={handlePickFolder}>
               Open Project Folder
             </button>
           </div>
         )}
 
         {phase === 'pick-layout' && (
-          <div style={styles.emptyState}>
-            <h2 style={styles.emptyTitle}>Choose a terminal layout</h2>
-            <p style={styles.emptyDesc}>
+          <div className="empty-state">
+            <h2 className="empty-title">Choose a terminal layout</h2>
+            <p className="empty-desc">
               Click a layout to launch Claude Code agents immediately
             </p>
-            <div style={styles.layoutSection}>
+            <div className="layout-section">
               <LayoutPicker
                 selectedId={null}
                 onSelect={launchWithLayout}
@@ -137,104 +149,4 @@ export default function App() {
       </main>
     </div>
   )
-}
-
-const styles: Record<string, React.CSSProperties> = {
-  app: {
-    display: 'flex',
-    flexDirection: 'column',
-    height: '100vh',
-    backgroundColor: '#1a1a2e',
-    color: '#e0e0e0',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-  },
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '8px 16px',
-    backgroundColor: '#16213e',
-    borderBottom: '1px solid #0f3460',
-    flexShrink: 0
-  },
-  headerLeft: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px'
-  },
-  headerRight: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px'
-  },
-  title: {
-    margin: 0,
-    fontSize: '16px',
-    fontWeight: 600
-  },
-  projectBadge: {
-    fontSize: '12px',
-    padding: '2px 8px',
-    borderRadius: '4px',
-    backgroundColor: '#0f3460',
-    color: '#a0c4ff'
-  },
-  btn: {
-    padding: '6px 12px',
-    border: '1px solid #0f3460',
-    borderRadius: '4px',
-    backgroundColor: 'transparent',
-    color: '#e0e0e0',
-    cursor: 'pointer',
-    fontSize: '13px'
-  },
-  btnLarge: {
-    padding: '12px 24px',
-    border: 'none',
-    borderRadius: '6px',
-    backgroundColor: '#0f3460',
-    color: '#a0c4ff',
-    cursor: 'pointer',
-    fontSize: '16px',
-    fontWeight: 600,
-    marginTop: '16px'
-  },
-  main: {
-    flex: 1,
-    overflow: 'hidden',
-    minHeight: 0
-  },
-  emptyState: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '100%',
-    gap: '4px'
-  },
-  emptyTitle: {
-    margin: 0,
-    fontSize: '20px',
-    fontWeight: 600
-  },
-  emptyDesc: {
-    margin: '4px 0 16px',
-    fontSize: '14px',
-    color: '#7a7a9a'
-  },
-  layoutSection: {
-    marginTop: '12px'
-  },
-  layoutInfo: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    marginTop: '16px',
-    gap: '4px'
-  },
-  layoutLabel: {
-    fontSize: '14px',
-    color: '#a0c4ff',
-    fontWeight: 500
-  }
 }

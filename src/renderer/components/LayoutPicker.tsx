@@ -22,29 +22,14 @@ function LayoutIcon({ rows, cols, selected }: { rows: number; cols: number; sele
   const cells = Array.from({ length: rows * cols })
   return (
     <div
+      className={`layout-icon ${selected ? 'layout-icon--selected' : ''}`}
       style={{
-        display: 'grid',
         gridTemplateColumns: `repeat(${cols}, 1fr)`,
-        gridTemplateRows: `repeat(${rows}, 1fr)`,
-        gap: '2px',
-        width: 36,
-        height: 28,
-        padding: '3px',
-        borderRadius: '4px',
-        border: selected ? '2px solid #a0c4ff' : '2px solid transparent',
-        backgroundColor: selected ? 'rgba(160, 196, 255, 0.1)' : 'transparent'
+        gridTemplateRows: `repeat(${rows}, 1fr)`
       }}
     >
       {cells.map((_, i) => (
-        <div
-          key={i}
-          style={{
-            backgroundColor: selected ? '#a0c4ff' : '#4a5568',
-            borderRadius: 2,
-            minWidth: 0,
-            minHeight: 0
-          }}
-        />
+        <div key={i} className="layout-icon-cell" />
       ))}
     </div>
   )
@@ -52,13 +37,13 @@ function LayoutIcon({ rows, cols, selected }: { rows: number; cols: number; sele
 
 export default function LayoutPicker({ selectedId, onSelect }: Props) {
   return (
-    <div style={styles.container}>
-      <span style={styles.label}>Layout</span>
-      <div style={styles.grid}>
+    <div className="layout-picker">
+      <span className="layout-picker-label">Layout</span>
+      <div className="layout-picker-grid">
         {GRID_PRESETS.map((preset) => (
           <button
             key={preset.id}
-            style={styles.btn}
+            className="layout-btn"
             onClick={() => onSelect(preset)}
             title={preset.label}
           >
@@ -72,32 +57,4 @@ export default function LayoutPicker({ selectedId, onSelect }: Props) {
       </div>
     </div>
   )
-}
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px'
-  },
-  label: {
-    fontSize: '12px',
-    color: '#a0a0b0',
-    fontWeight: 500
-  },
-  grid: {
-    display: 'flex',
-    gap: '2px',
-    flexWrap: 'wrap'
-  },
-  btn: {
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    padding: '2px',
-    borderRadius: '4px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center'
-  }
 }

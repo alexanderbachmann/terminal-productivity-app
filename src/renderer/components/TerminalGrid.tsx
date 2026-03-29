@@ -12,13 +12,10 @@ interface Props {
 export default function TerminalGrid({ terminals, rows, cols, onClose }: Props) {
   return (
     <div
+      className="terminal-grid"
       style={{
-        display: 'grid',
         gridTemplateColumns: `repeat(${cols}, 1fr)`,
-        gridTemplateRows: `repeat(${rows}, 1fr)`,
-        gap: '2px',
-        height: '100%',
-        backgroundColor: '#0d1117'
+        gridTemplateRows: `repeat(${rows}, 1fr)`
       }}
     >
       {Array.from({ length: rows * cols }, (_, i) => {
@@ -30,25 +27,11 @@ export default function TerminalGrid({ terminals, rows, cols, onClose }: Props) 
             onClose={() => onClose(session.id)}
           />
         ) : (
-          <div key={`empty-${i}`} style={styles.empty}>
-            <span style={styles.emptyText}>Empty slot</span>
+          <div key={`empty-${i}`} className="pane pane--empty">
+            <span className="pane-empty-text">Empty slot</span>
           </div>
         )
       })}
     </div>
   )
-}
-
-const styles: Record<string, React.CSSProperties> = {
-  empty: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#1a1a2e',
-    border: '1px dashed #2a2a4e'
-  },
-  emptyText: {
-    color: '#4a5568',
-    fontSize: '13px'
-  }
 }

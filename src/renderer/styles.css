@@ -1,0 +1,654 @@
+/* ============================================
+   Design Tokens (static, not theme-dependent)
+   ============================================ */
+:root {
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
+}
+
+/* ============================================
+   Reset & Base
+   ============================================ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--bg-primary);
+}
+
+/* ============================================
+   Scrollbar
+   ============================================ */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+
+/* ============================================
+   Focus States
+   ============================================ */
+button:focus-visible,
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ============================================
+   App Shell
+   ============================================ */
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color var(--transition-normal), color var(--transition-normal);
+}
+
+/* ============================================
+   Header
+   ============================================ */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  background: color-mix(in srgb, var(--bg-secondary) 85%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  transition: background-color var(--transition-normal), border-color var(--transition-normal);
+  z-index: 10;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+.project-badge {
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-tertiary);
+  color: var(--accent);
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+/* ============================================
+   Buttons
+   ============================================ */
+.btn {
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background-color var(--transition-fast),
+              border-color var(--transition-fast),
+              color var(--transition-fast),
+              transform var(--transition-fast);
+}
+
+.btn:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn-large {
+  padding: 12px 28px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--accent) 15%, var(--bg-tertiary));
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  transition: background-color var(--transition-fast),
+              transform var(--transition-fast),
+              box-shadow var(--transition-fast);
+}
+
+.btn-large:hover {
+  background: color-mix(in srgb, var(--accent) 25%, var(--bg-tertiary));
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.btn-large:active {
+  transform: translateY(0);
+}
+
+/* ============================================
+   Theme Select
+   ============================================ */
+.theme-select {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-size: 13px;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236b7280'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 26px;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.theme-select:hover {
+  border-color: var(--accent);
+}
+
+.theme-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 20%, transparent);
+  outline: none;
+}
+
+/* ============================================
+   Main Content
+   ============================================ */
+.main {
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ============================================
+   Empty State
+   ============================================ */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 6px;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in srgb, var(--accent) 4%, transparent) 0%,
+    transparent 70%
+  );
+}
+
+.empty-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.empty-desc {
+  margin: 4px 0 20px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.layout-section {
+  margin-top: 16px;
+}
+
+/* ============================================
+   Terminal Grid
+   ============================================ */
+.terminal-grid {
+  display: grid;
+  gap: 3px;
+  height: 100%;
+  padding: 3px;
+  background: color-mix(in srgb, var(--bg-primary) 50%, black);
+  transition: background-color var(--transition-normal);
+}
+
+/* ============================================
+   Terminal Pane
+   ============================================ */
+.pane {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--bg-primary);
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  transition: background-color var(--transition-normal),
+              box-shadow var(--transition-normal);
+}
+
+.pane:focus-within {
+  box-shadow: 0 0 0 1px var(--accent),
+              0 0 20px color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.pane--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--border);
+}
+
+.pane-empty-text {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.pane-title-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 10px;
+  background: var(--bg-secondary);
+  font-size: 12px;
+  flex-shrink: 0;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  transition: background-color var(--transition-normal);
+}
+
+.pane-name {
+  font-weight: 600;
+  color: var(--accent);
+  transition: color var(--transition-fast);
+}
+
+.pane-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pane-status {
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.pane-status-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.pane-status-dot--running {
+  background: #4ade80;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.pane-status-dot--stopped {
+  background: #f87171;
+}
+
+.pane-status-text--running {
+  color: #4ade80;
+}
+
+.pane-status-text--stopped {
+  color: #f87171;
+}
+
+.ctrl-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 4px;
+  border-radius: var(--radius-sm);
+  transition: color var(--transition-fast),
+              transform var(--transition-fast),
+              background-color var(--transition-fast);
+}
+
+.ctrl-btn:hover {
+  color: var(--accent);
+  transform: scale(1.15);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.ctrl-btn--close:hover {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.1);
+}
+
+.pane-terminal {
+  flex: 1;
+  min-height: 0;
+  padding: 4px;
+}
+
+/* ============================================
+   Layout Picker
+   ============================================ */
+.layout-picker {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.layout-picker-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.layout-picker-grid {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.layout-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  transition: transform var(--transition-fast),
+              background-color var(--transition-fast);
+}
+
+.layout-btn:hover {
+  background: var(--bg-tertiary);
+  transform: scale(1.12);
+}
+
+.layout-icon {
+  display: grid;
+  gap: 3px;
+  width: 48px;
+  height: 36px;
+  padding: 5px;
+  border-radius: var(--radius-sm);
+  border: 2px solid transparent;
+  transition: border-color var(--transition-fast),
+              background-color var(--transition-fast);
+}
+
+.layout-icon--selected {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.layout-icon-cell {
+  background: var(--text-secondary);
+  border-radius: 2px;
+  min-width: 0;
+  min-height: 0;
+  transition: background-color var(--transition-fast);
+}
+
+.layout-icon--selected .layout-icon-cell {
+  background: var(--accent);
+}
+
+.layout-btn:hover .layout-icon-cell {
+  background: color-mix(in srgb, var(--accent) 60%, var(--text-secondary));
+}
+
+/* ============================================
+   Modal
+   ============================================ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  width: 640px;
+  max-height: 80vh;
+  overflow: auto;
+  box-shadow: var(--shadow-lg);
+}
+
+.modal-title {
+  margin: 0 0 4px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.modal-subtitle {
+  margin: 0 0 20px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.agent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.agent-card {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px solid transparent;
+  transition: border-color var(--transition-fast);
+}
+
+.agent-card:hover {
+  border-color: var(--border);
+}
+
+.agent-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.agent-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.agent-field-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  min-width: 100px;
+  padding-top: 6px;
+}
+
+.agent-input,
+.agent-select {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-size: 13px;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.agent-input:focus,
+.agent-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 15%, transparent);
+  outline: none;
+}
+
+.agent-name-input {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-tertiary);
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+  transition: border-color var(--transition-fast);
+}
+
+.agent-name-input:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.agent-check-label {
+  font-size: 12px;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.agent-small-input {
+  flex: 1;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-size: 12px;
+}
+
+.agent-textarea {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color var(--transition-fast);
+}
+
+.agent-textarea:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.btn-cancel {
+  padding: 8px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 13px;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.btn-cancel:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--text-secondary);
+}
+
+.btn-launch {
+  padding: 8px 18px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--accent) 20%, var(--bg-tertiary));
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.btn-launch:hover {
+  background: color-mix(in srgb, var(--accent) 30%, var(--bg-tertiary));
+  transform: translateY(-1px);
+}
+
+/* ============================================
+   Animations
+   ============================================ */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
