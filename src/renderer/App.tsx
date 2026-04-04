@@ -29,9 +29,13 @@ export default function App() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger while typing in input fields (e.g., settings)
-      const tag = (e.target as HTMLElement)?.tagName
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+      // Don't trigger while typing in app UI inputs (settings, config modal),
+      // but DO allow it inside xterm's internal textarea (class "xterm-helper-textarea")
+      const target = e.target as HTMLElement
+      const isAppInput = (target.tagName === 'INPUT' || target.tagName === 'SELECT' ||
+        (target.tagName === 'TEXTAREA' && !target.classList.contains('xterm-helper-textarea')))
+
+      if (isAppInput) return
 
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'm') {
         e.preventDefault()
