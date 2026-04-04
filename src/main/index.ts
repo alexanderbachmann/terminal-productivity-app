@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog, session, systemPreferences } from 'electron'
 import path from 'path'
 import { TerminalManager } from './terminalManager'
 import { SessionStore } from './sessionStore'
@@ -96,9 +96,65 @@ function registerIpcHandlers(): void {
   ipcMain.handle('workspace:load', (_event, projectPath: string) => {
     return sessionStore.load(projectPath)
   })
+
+  ipcMain.handle('voice:check-mic-permission', async () => {
+    if (process.platform === 'darwin') {
+      const status = systemPreferences.getMediaAccessStatus('microphone')
+      if (status === 'not-determined') {
+        const granted = await systemPreferences.askForMediaAccess('microphone')
+        return { status: granted ? 'granted' : 'denied' }
+      }
+      return { status }
+    }
+    // Non-macOS: assume granted (handled by Chromium)
+    return { status: 'granted' }
+  })
+
+  ipcMain.handle('deepgram:test-key', async (_event, apiKey: string) => {
+    try {
+      const resp = await fetch('https://api.deepgram.com/v1/projects', {
+        headers: { 'Authorization': `Token ${apiKey}` }
+      })
+      if (resp.ok) return { status: 'valid' }
+      if (resp.status === 401 || resp.status === 403) return { status: 'invalid' }
+      return { status: 'error', message: `Deepgram returned status ${resp.status}` }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err)
+      return { status: 'error', message }
+    }
+  })
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  // Request macOS microphone permission early so getUserMedia works in the renderer
+  if (process.platform === 'darwin') {
+    const micStatus = systemPreferences.getMediaAccessStatus('microphone')
+    if (micStatus === 'not-determined') {
+      await systemPreferences.askForMediaAccess('microphone')
+    }
+  }
+
+  // Auto-grant microphone permission for voice input
+  session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
+    if (permission === 'media') {
+      callback(true)
+      return
+    }
+    callback(false)
+  })
+
+  // Allow renderer to connect to Deepgram (bypass CORS for their API)
+  session.defaultSession.webRequest.onHeadersReceived(
+    { urls: ['https://api.deepgram.com/*'] },
+    (details, callback) => {
+      const headers = { ...details.responseHeaders }
+      headers['Access-Control-Allow-Origin'] = ['*']
+      headers['Access-Control-Allow-Headers'] = ['Authorization, Content-Type']
+      headers['Access-Control-Allow-Methods'] = ['GET, POST, OPTIONS']
+      callback({ responseHeaders: headers })
+    }
+  )
+
   registerIpcHandlers()
   createWindow()
 

@@ -33,7 +33,13 @@ const api = {
     ipcRenderer.invoke('workspace:save', layout),
 
   loadWorkspace: (projectPath: string) =>
-    ipcRenderer.invoke('workspace:load', projectPath)
+    ipcRenderer.invoke('workspace:load', projectPath),
+
+  testDeepgramKey: (apiKey: string): Promise<{ status: string; message?: string }> =>
+    ipcRenderer.invoke('deepgram:test-key', apiKey),
+
+  checkMicPermission: (): Promise<{ status: string }> =>
+    ipcRenderer.invoke('voice:check-mic-permission')
 }
 
 export type ElectronAPI = typeof api

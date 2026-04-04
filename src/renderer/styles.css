@@ -269,6 +269,7 @@ textarea:focus-visible {
    Terminal Pane
    ============================================ */
 .pane {
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -277,12 +278,35 @@ textarea:focus-visible {
   overflow: hidden;
   border-radius: var(--radius-md);
   transition: background-color var(--transition-normal),
-              box-shadow var(--transition-normal);
+              box-shadow var(--transition-normal),
+              opacity var(--transition-normal);
+}
+
+.pane::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: transparent;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  transition: background var(--transition-normal);
+  z-index: 1;
+  pointer-events: none;
 }
 
 .pane:focus-within {
-  box-shadow: 0 0 0 1px var(--accent),
-              0 0 20px color-mix(in srgb, var(--accent) 10%, transparent);
+  box-shadow: 0 0 0 2px var(--accent),
+              0 0 28px color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+.pane:focus-within::before {
+  background: var(--accent);
+}
+
+.pane:focus-within .pane-title-bar {
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg-secondary));
 }
 
 .pane--empty {
@@ -290,6 +314,10 @@ textarea:focus-visible {
   align-items: center;
   justify-content: center;
   border: 1px dashed var(--border);
+}
+
+.terminal-grid:focus-within .pane:not(:focus-within) {
+  opacity: 0.72;
 }
 
 .pane-empty-text {
@@ -651,4 +679,153 @@ textarea:focus-visible {
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.35; }
+}
+
+/* ============================================
+   Voice / Speech-to-Text Button
+   ============================================ */
+.ctrl-btn--voice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ctrl-btn--voice-active {
+  color: var(--accent);
+  animation: voice-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes voice-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 0.7; }
+}
+
+/* ============================================
+   Settings Popover
+   ============================================ */
+.btn--settings {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 8px;
+  position: relative;
+}
+
+.settings-popover {
+  position: absolute;
+  top: 46px;
+  right: 80px;
+  width: 340px;
+  padding: 16px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: 50;
+  animation: voice-fade-in 150ms ease-out;
+}
+
+.settings-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 14px;
+  color: var(--text-primary);
+}
+
+.settings-field {
+  margin-bottom: 14px;
+}
+
+.settings-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.settings-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.settings-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 15%, transparent);
+  outline: none;
+}
+
+.settings-hint {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 5px;
+  line-height: 1.4;
+}
+
+.settings-hint--success {
+  color: #4ade80;
+  font-weight: 600;
+}
+
+.settings-hint--error {
+  color: #f87171;
+  font-weight: 600;
+}
+
+.settings-kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg-tertiary);
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 11px;
+  color: var(--accent);
+}
+
+.settings-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+/* ============================================
+   Voice Transcript Preview
+   ============================================ */
+.voice-preview {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  right: 8px;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--bg-secondary) 85%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  font-size: 13px;
+  z-index: 5;
+  animation: voice-fade-in 150ms ease-out;
+}
+
+.voice-preview--error {
+  border-color: #f87171;
+  color: #f87171;
+  background: color-mix(in srgb, #f87171 10%, var(--bg-secondary) 85%);
+}
+
+@keyframes voice-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }

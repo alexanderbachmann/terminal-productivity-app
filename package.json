@@ -4,10 +4,10 @@
   "description": "Desktop app for orchestrating multiple Claude-backed terminal sessions against a local project",
   "main": "./out/main/index.js",
   "scripts": {
-    "dev": "electron-vite dev",
+    "dev": "unset ELECTRON_RUN_AS_NODE && electron-vite dev",
     "build": "electron-vite build",
-    "preview": "electron-vite preview",
-    "start": "electron .",
+    "preview": "unset ELECTRON_RUN_AS_NODE && electron-vite preview",
+    "start": "unset ELECTRON_RUN_AS_NODE && electron .",
     "postinstall": "npx @electron/rebuild -m . -w node-pty"
   },
   "dependencies": {
@@ -22,7 +22,7 @@
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "@vitejs/plugin-react": "^4.2.0",
-    "electron": "^28.3.3",
+    "electron": "^41.1.1",
     "electron-builder": "^24.9.0",
     "electron-vite": "^2.0.0",
     "react": "^18.2.0",

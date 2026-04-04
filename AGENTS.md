@@ -86,6 +86,63 @@ Reviews against:
 
 ---
 
+### `/perf-audit` — Performance Auditor
+**When to use:** Investigating sluggish rendering, memory leaks, or high CPU from terminal sessions.
+
+Focuses on:
+- xterm.js instance lifecycle and `.dispose()` cleanup
+- IPC throughput for high-frequency `terminal:data` events
+- React re-render cascades from theme/layout changes
+- PTY process cleanup in `TerminalManager`
+- Event listener leaks (IPC `on` without removal)
+
+**Example:** `/perf-audit check if terminal panes are leaking memory when closed`
+
+---
+
+### `/debug-voice` — Voice/Speech Debugger
+**When to use:** Debugging speech-to-text issues — microphone permissions, Deepgram WebSocket connection, audio streaming, transcript delivery, or React state/UI problems.
+
+Diagnostic layers (top-down):
+1. **Permissions** — macOS mic access, `getUserMedia` rejection
+2. **Provider creation** — missing Deepgram API key in localStorage
+3. **WebSocket connection** — auth failures (code 1008), network drops (1006), timeout
+4. **Audio capture** — `AudioContext` sample rate, `ScriptProcessorNode` wiring
+5. **Transcript delivery** — Deepgram `is_final` flag, `onResult` callback chain
+6. **React state** — `VoiceContext` vs `useVoiceInput`, stale closures, UI not updating
+7. **Cleanup** — mic stays active, WebSocket not closed, memory leaks
+
+**Example:** `/debug-voice microphone appears active but no transcripts are showing up`
+
+---
+
+### `/docs` — Documentation Writer
+**When to use:** After adding features, new IPC channels, themes, or components — keeps `README.md` accurate and up to date.
+
+Reads the actual source code before writing anything. Covers:
+- IPC channel table (from `src/shared/types.ts`)
+- App phase state machine
+- Voice input flow and providers
+- Workspace persistence format
+- Themes structure
+- Architecture notes
+
+**Example:** `/docs update the README after the new voice provider I added`
+
+---
+
+### `/upgrade` — Dependency Upgrade Specialist
+**When to use:** Upgrading Electron, React, xterm.js, node-pty, or other key dependencies.
+
+Handles the critical compatibility chain:
+- Electron version → Node ABI → node-pty rebuild
+- xterm.js `ITheme` interface → `ThemeDefinition` type sync
+- React version → component lifecycle compatibility
+
+**Example:** `/upgrade upgrade Electron to the latest version`
+
+---
+
 ## Quick Reference
 
 | Agent | Invoke | Best for |
@@ -96,3 +153,7 @@ Reviews against:
 | build-doctor | `/build-doctor` | Fixing build failures |
 | test-setup | `/test-setup` | Tests and test infrastructure |
 | review | `/review` | Code review before merge |
+| perf-audit | `/perf-audit` | Performance and memory leak audits |
+| debug-voice | `/debug-voice` | Voice/speech-to-text debugging |
+| upgrade | `/upgrade` | Dependency upgrades |
+| docs | `/docs` | Update README from current code |

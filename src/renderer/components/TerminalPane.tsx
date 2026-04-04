@@ -1,22 +1,47 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { WebglAddon } from '@xterm/addon-webgl'
 import '@xterm/xterm/css/xterm.css'
 import { useTheme } from '../ThemeContext'
+import { useVoiceContext } from '../voice/VoiceContext'
+import VoiceTranscriptPreview from './VoiceTranscriptPreview'
 import type { TerminalSession } from '../../shared/types'
 
 interface Props {
   session: TerminalSession
   onClose: () => void
+  onFocus?: () => void
 }
 
-export default function TerminalPane({ session, onClose }: Props) {
+function SpeechToTextIcon({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3Z" />
+      <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+      <line x1="12" y1="19" x2="12" y2="23" />
+      <path d="M16 23H8" />
+    </svg>
+  )
+}
+
+export default function TerminalPane({ session, onClose, onFocus }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const termRef = useRef<Terminal | null>(null)
   const fitRef = useRef<FitAddon | null>(null)
   const [isRunning, setIsRunning] = useState(true)
   const { theme, themeId } = useTheme()
+  const { toggleListening, isSessionListening, interimTranscript, error } = useVoiceContext()
+
+  const listening = isSessionListening(session.id)
+
+  const onFinalTranscript = useCallback((text: string) => {
+    window.electronAPI.writeTerminal(session.id, text + '\n')
+  }, [session.id])
+
+  const handleMicToggle = useCallback(() => {
+    toggleListening(session.id, onFinalTranscript)
+  }, [session.id, toggleListening, onFinalTranscript])
 
   // Initialize terminal
   useEffect(() => {
@@ -54,6 +79,8 @@ export default function TerminalPane({ session, onClose }: Props) {
     const removeDataListener = window.electronAPI.onTerminalData((output) => {
       if (output.sessionId === session.id) {
         term.write(output.data)
+        // If we receive data, the process is alive (fixes StrictMode double-mount)
+        setIsRunning(true)
       }
     })
 
@@ -111,7 +138,7 @@ export default function TerminalPane({ session, onClose }: Props) {
   }
 
   return (
-    <div className="pane">
+    <div className="pane" onFocusCapture={onFocus}>
       <div className="pane-title-bar">
         <span className="pane-name">{session.name}</span>
         <div className="pane-controls">
@@ -121,6 +148,13 @@ export default function TerminalPane({ session, onClose }: Props) {
               {isRunning ? 'running' : 'stopped'}
             </span>
           </span>
+          <button
+            className={`ctrl-btn ctrl-btn--voice${listening ? ' ctrl-btn--voice-active' : ''}`}
+            onClick={handleMicToggle}
+            title={listening ? 'Stop voice input (Cmd+Shift+M)' : 'Start voice input (Cmd+Shift+M)'}
+          >
+            <SpeechToTextIcon />
+          </button>
           <button className="ctrl-btn" onClick={handleRestart} title="Restart">
             ↻
           </button>
@@ -130,6 +164,13 @@ export default function TerminalPane({ session, onClose }: Props) {
         </div>
       </div>
       <div ref={containerRef} className="pane-terminal" />
+      {(listening || error) && (
+        <VoiceTranscriptPreview
+          transcript={interimTranscript}
+          error={error}
+          isListening={listening}
+        />
+      )}
     </div>
   )
 }

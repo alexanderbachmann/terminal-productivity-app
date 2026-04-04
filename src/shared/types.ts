@@ -37,6 +37,20 @@ export interface TerminalOutput {
   data: string
 }
 
+export type VoiceProvider = 'web-speech' | 'whisper'
+
+export type VoiceStatus = 'idle' | 'connecting' | 'listening' | 'error'
+
+export interface VoiceEvent {
+  transcript: string
+  isFinal: boolean
+}
+
+export interface VoiceError {
+  code: string
+  message: string
+}
+
 export type IpcChannels =
   | 'terminal:create'
   | 'terminal:write'
