@@ -86,9 +86,12 @@ export default function SettingsPopover({ isOpen, onClose }: Props) {
       </div>
 
       <div className="settings-field">
-        <label className="settings-label">Voice Shortcut</label>
+        <label className="settings-label">Voice Shortcuts</label>
         <p className="settings-hint">
-          Press <kbd className="settings-kbd">Cmd+Shift+M</kbd> to toggle voice input on the focused terminal
+          <kbd className="settings-kbd">Cmd+Shift+M</kbd> Toggle voice on/off
+        </p>
+        <p className="settings-hint">
+          <kbd className="settings-kbd">Cmd+Shift+Space</kbd> Push-to-talk (hold to record)
         </p>
       </div>
 

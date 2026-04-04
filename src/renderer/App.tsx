@@ -11,7 +11,7 @@ type AppPhase = 'pick-project' | 'pick-layout' | 'running'
 
 export default function App() {
   const { themeId, setThemeId } = useTheme()
-  const { toggleListening, activeSessionId } = useVoiceContext()
+  const { toggleListening, startListening, stopListening, activeSessionId } = useVoiceContext()
   const [projectPath, setProjectPath] = useState<string | null>(null)
   const [phase, setPhase] = useState<AppPhase>('pick-project')
   const [selectedLayout, setSelectedLayout] = useState<GridLayout | null>(null)
@@ -20,41 +20,71 @@ export default function App() {
   const [focusedTerminalId, setFocusedTerminalId] = useState<string | null>(null)
   const onFinalRef = useRef<Map<string, (text: string) => void>>(new Map())
 
-  // Global keyboard shortcut: Cmd+Shift+M to toggle voice
+  // Global keyboard shortcuts for voice input
   // Use refs to avoid stale closures — the handler identity stays stable
   const focusedRef = useRef(focusedTerminalId)
   focusedRef.current = focusedTerminalId
   const terminalsRef = useRef(terminals)
   terminalsRef.current = terminals
+  const pushToTalkRef = useRef(false) // tracks whether push-to-talk is active
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger while typing in app UI inputs (settings, config modal),
-      // but DO allow it inside xterm's internal textarea (class "xterm-helper-textarea")
+    const isAppInput = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement
-      const isAppInput = (target.tagName === 'INPUT' || target.tagName === 'SELECT' ||
+      return (target.tagName === 'INPUT' || target.tagName === 'SELECT' ||
         (target.tagName === 'TEXTAREA' && !target.classList.contains('xterm-helper-textarea')))
+    }
 
-      if (isAppInput) return
+    const getTargetAndCallback = () => {
+      const tList = terminalsRef.current
+      const targetId = focusedRef.current || (tList.length > 0 ? tList[0].id : null)
+      if (!targetId) return null
 
+      let onFinal = onFinalRef.current.get(targetId)
+      if (!onFinal) {
+        onFinal = (text: string) => window.electronAPI.writeTerminal(targetId, text + '\n')
+        onFinalRef.current.set(targetId, onFinal)
+      }
+      return { targetId, onFinal }
+    }
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (isAppInput(e)) return
+
+      // Cmd+Shift+M — toggle voice on/off
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'm') {
         e.preventDefault()
-        const tList = terminalsRef.current
-        const targetId = focusedRef.current || (tList.length > 0 ? tList[0].id : null)
-        if (!targetId) return
+        const ctx = getTargetAndCallback()
+        if (ctx) toggleListening(ctx.targetId, ctx.onFinal)
+        return
+      }
 
-        let onFinal = onFinalRef.current.get(targetId)
-        if (!onFinal) {
-          onFinal = (text: string) => window.electronAPI.writeTerminal(targetId, text + '\n')
-          onFinalRef.current.set(targetId, onFinal)
-        }
-        toggleListening(targetId, onFinal)
+      // Cmd+Shift+Space — push-to-talk (hold to record, release to stop)
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.code === 'Space') {
+        e.preventDefault()
+        if (pushToTalkRef.current) return // ignore key repeat
+        pushToTalkRef.current = true
+        const ctx = getTargetAndCallback()
+        if (ctx) startListening(ctx.targetId, ctx.onFinal)
       }
     }
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      // Stop push-to-talk when Space is released (modifiers may already be up)
+      if (pushToTalkRef.current && e.code === 'Space') {
+        pushToTalkRef.current = false
+        stopListening()
+      }
+    }
+
     // Use capture phase so it fires BEFORE xterm consumes the keystroke
     window.addEventListener('keydown', handleKeyDown, true)
-    return () => window.removeEventListener('keydown', handleKeyDown, true)
-  }, [toggleListening])
+    window.addEventListener('keyup', handleKeyUp, true)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown, true)
+      window.removeEventListener('keyup', handleKeyUp, true)
+    }
+  }, [toggleListening, startListening, stopListening])
 
   const handlePickFolder = useCallback(async () => {
     const folder = await window.electronAPI.pickFolder()
